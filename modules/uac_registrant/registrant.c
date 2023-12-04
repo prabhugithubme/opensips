@@ -567,6 +567,70 @@ int run_reg_tm_cback(void *e_data, void *data, void *r_data)
 			LM_ERR("FAKED_REPLY\n");
 			goto done;
 		}
+		/* Prabhu testing log  */
+       			LM_DBG("Local Port actual:[%d]\n", rec->local_src_port);
+       			LM_DBG("Local Port actual =[%d]\n", rec->td.send_sock->last_local_real_port);
+       			LM_DBG("Recieved contact uri =[%s]\n", rec->contact_uri.s);
+       			LM_DBG("Recieved uri len =[%d]\n", rec->contact_uri.len);
+       			LM_DBG("Recieved contact len =[%ld]\n",strlen(rec->contact_uri.s));
+
+//		if (rec->local_src_port != 0){
+			// Note: Need to move all variables to start of the func
+			str converted_contact_uri = STR_NULL;
+			char actual_port[10] = "";
+			const char *standard_port = ":5060";
+			char *position ;
+			size_t length_before = 0 , length_after = 0;
+	        	char *substring_before, *concatenated_substring;
+			int temp = 5132;	// testing
+
+			snprintf(actual_port, sizeof(actual_port), ":%d", temp);        // testing
+//			snprintf(actual_port, sizeof(actual_port), ":%d", rec->local_src_port);   // uncomment this line if actual port comes
+			position = strstr(rec->contact_uri.s, standard_port);
+			if (position != NULL) {
+        			// Calculate the length of the substring until the match
+				length_before = position - rec->contact_uri.s;
+
+		        	// Allocate memory for the substring before the match and copy it
+	        		substring_before = (char*) malloc(length_before + 1);
+				if (substring_before != NULL) {
+					strncpy(substring_before, rec->contact_uri.s, length_before);
+					substring_before[length_before] = '\0'; // Null-terminate the substring
+
+			         	// Calculate the length of the substring after the match
+			         	length_after = strlen(position + strlen(standard_port));
+
+			            	// Allocate memory for the concatenated substring and copy it
+			         	concatenated_substring = (char*) malloc(length_before + length_after + strlen(actual_port)+ 1);
+			         	if (concatenated_substring != NULL) {
+			                	strcpy(concatenated_substring, substring_before);
+			                	strcat(concatenated_substring, actual_port);
+			                	strcat(concatenated_substring, position + strlen(standard_port));
+
+						init_str(&converted_contact_uri,concatenated_substring); // copy formated header to local str
+
+//	       					LM_DBG("coppied str  =[%s]\n", converted_contact_uri.s);
+//	       					LM_DBG("coppied str len =[%ld]\n", strlen(converted_contact_uri.s));
+//	       					LM_DBG("coppied str len struct =[%d]\n", converted_contact_uri.len);
+
+						str_cpy(&rec->contact_uri, &converted_contact_uri); // copy local str to struct header variabl
+
+//     						LM_DBG("final contact uri =[%s]\n", rec->contact_uri.s);
+//			       			LM_DBG("final uri len =[%d]\n", rec->contact_uri.len);
+//	       					LM_DBG("final contact len =[%ld]\n",strlen(rec->contact_uri.s));
+
+		                		free(concatenated_substring);
+				         } else {
+				                LM_ERR("concatenated_substring -Memory allocation failed\n");
+				         }
+					free(substring_before);
+				} else {
+			            LM_ERR("substring_before- Memory allocation failed\n");
+				}
+			} else {
+				LM_DBG("Substring not found\n");
+			}
+//		}
 
 		if (rec->auth_user.s==NULL || rec->auth_user.len==0 ||
 			rec->auth_password.s==NULL || rec->auth_password.len==0) {
